@@ -14,6 +14,9 @@
 #endif
 
 #include <wjfilesystem/path.h>
+#include <fstream>
+#include <vector>
+#include <stdexcept>
 
 #include <nlohmann/json.hpp>
 
@@ -50,7 +53,23 @@ ParserConfigurationBase::ParserConfigurationBase(const blocksci::DataConfigurati
 #ifdef BLOCKSCI_FILE_PARSER
 ParserConfiguration<FileTag>::ParserConfiguration() : ParserConfigurationBase() {}
 
-ParserConfiguration<FileTag>::ParserConfiguration(const blocksci::DataConfiguration &dataConfig, const ChainDiskConfiguration &diskConfig) : ParserConfigurationBase(dataConfig), diskConfig(diskConfig) {}
+ParserConfiguration<FileTag>::ParserConfiguration(const blocksci::DataConfiguration &dataConfig, const ChainDiskConfiguration &diskConfig)
+    : ParserConfigurationBase(dataConfig), diskConfig(diskConfig) {
+    filesystem::path blocksDir = diskConfig.coinDirectory / "blocks";
+    filesystem::path xorFilePath = blocksDir / "xor.dat";
+    if (xorFilePath.exists()) {
+        std::ifstream xorFile(xorFilePath.str(), std::ios::binary);
+        if (!xorFile) {
+            throw std::runtime_error("Failed to open xor.dat file: " + xorFilePath.str());
+        }
+        std::vector<uint8_t> key(8);
+        xorFile.read(reinterpret_cast<char*>(key.data()), key.size());
+        if (!xorFile) {
+            throw std::runtime_error("Failed to read xor key from file: " + xorFilePath.str());
+        }
+        xorKey = std::move(key);
+    }
+}
 
 void ChainDiskConfiguration::resetHashFunc() {
     if (hashFuncName == "doubleSha256") {

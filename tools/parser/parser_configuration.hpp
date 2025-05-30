@@ -18,6 +18,8 @@
 #include <wjfilesystem/path.h>
 
 #include <functional>
+#include <cstdint>
+#include <vector>
 
 struct ParserConfigurationBase {
     blocksci::DataConfiguration dataConfig;
@@ -77,6 +79,8 @@ struct ChainDiskConfiguration {
     uint32_t blockMagic;
     std::string hashFuncName;
     std::function<blocksci::uint256(const char *data, unsigned long len)> workHashFunction;
+    /** 8-byte key for XOR deobfuscation of block files (from xor.dat), empty if no obfuscation */
+    std::vector<uint8_t> xorKey;
     
     ChainDiskConfiguration() {}
     ChainDiskConfiguration(const std::string bitcoinDir, uint32_t blockMagic_, std::string hashFuncName) : coinDirectory(bitcoinDir), blockMagic(blockMagic_), hashFuncName(std::move(hashFuncName)) {
@@ -107,6 +111,8 @@ struct ParserConfiguration<FileTag> : public ParserConfigurationBase {
     ParserConfiguration(const blocksci::DataConfiguration &dataConfig, const ChainDiskConfiguration &diskConfig);
     
     ChainDiskConfiguration diskConfig;
+    /** If non-empty, contains the 8-byte XOR key for deobfuscating blk*.dat files */
+    std::vector<uint8_t> xorKey;
     
     filesystem::path pathForBlockFile(int fileNum) const;
 };

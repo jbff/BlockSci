@@ -9,6 +9,12 @@
 #define safe_mem_reader_hpp
 
 #include <mio/mmap.hpp>
+#include <array>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+#include <stdexcept>
+#include <cstdint>
 
 inline unsigned int variableLengthIntSize(uint64_t nSize) {
     if (nSize < 253)             return sizeof(unsigned char);
@@ -23,11 +29,14 @@ public:
     using size_type = mio::mmap_source::size_type;
     using difference_type = mio::mmap_source::difference_type;
     
-    explicit SafeMemReader(std::string path_) : path(std::move(path_)) {
+    explicit SafeMemReader(std::string path_, const std::vector<uint8_t> &xorKeyArg = {})
+        : path(std::move(path_)), useXor(xorKeyArg.size() == 8) {
+        if (useXor) {
+            std::copy_n(xorKeyArg.data(), 8, xorKey.begin());
+        }
         std::error_code error;
         fileMap.map(path, 0, mio::map_entire_file, error);
-        if(error) { throw error; }
-        
+        if (error) { throw error; }
         begin = fileMap.begin();
         end = fileMap.end();
         pos = begin;
@@ -55,7 +64,15 @@ public:
             throw std::out_of_range("Tried to read past end of file");
         }
         Type val;
-        memcpy(&val, pos, size);
+        if (useXor) {
+            auto offset0 = offset();
+            uint8_t *p = reinterpret_cast<uint8_t *>(&val);
+            for (size_t i = 0; i < size; ++i) {
+                p[i] = static_cast<uint8_t>(pos[i]) ^ xorKey[(offset0 + i) % xorKey.size()];
+            }
+        } else {
+            memcpy(&val, pos, size);
+        }
         return val;
     }
     
@@ -106,6 +123,8 @@ protected:
     iterator pos;
     iterator begin;
     iterator end;
+    bool useXor = false;
+    std::array<uint8_t, 8> xorKey{};
 };
 
 #endif /* safe_mem_reader_hpp */

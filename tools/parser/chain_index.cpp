@@ -96,7 +96,7 @@ namespace {
 
 std::vector<BlockInfo<FileTag>> readBlocksInfo(int fileNum, const ParserConfiguration<FileTag> &config) {
     auto blockFilePath = config.pathForBlockFile(fileNum);
-    SafeMemReader reader{blockFilePath.str()};
+    SafeMemReader reader{blockFilePath.str(), config.xorKey};
     return readBlocksImpl(reader, fileNum, config.diskConfig);
 }
 
@@ -134,7 +134,7 @@ void ChainIndex<FileTag>::update(const ConfigType &config, blocksci::BlockHeight
                 activeThreads++;
                 // Determine block file path
                 auto blockFilePath = localConfig.pathForBlockFile(fileNum);
-                SafeMemReader reader{blockFilePath.str()};
+                SafeMemReader reader{blockFilePath.str(), localConfig.xorKey};
                 // Logic for resume from last processed block, note blockStartOffset and length below
                 if (fileNum == firstFile) {
                     reader.reset(filePos);

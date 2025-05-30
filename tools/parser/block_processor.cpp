@@ -121,7 +121,9 @@ public:
                 ss << "Error: Failed to open block file " << blockPath << "\n";
                 throw std::runtime_error(ss.str());
             }
-            files.insert(std::make_pair(block.nFile, std::make_pair(SafeMemReader(blockPath.str()), lastTxRequired[block.nFile])));
+            files.insert(std::make_pair(block.nFile, std::make_pair(
+                SafeMemReader(blockPath.str(), config.xorKey), lastTxRequired[block.nFile]
+            )));
         }
         reader = &files.at(block.nFile).first;
         reader->reset(block.nDataPos);
