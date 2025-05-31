@@ -1,3 +1,6 @@
+This has been patched so it can index xor-obfuscated block data in Bitcoin core 0.28.0 and above. However, when parsing the block files, after indexing, it fails to continue to load the blocks, so there is more work to be done. In other words, this code is not yet in its present form able to completely parse xor-obfuscated block data and thus is not functional with installations using that feature (you are using it if you have an xor.dat in the blocks subdirectory under your bitcoin data directory).
+~~~~~~~~~~~~~~~~~~
+
 BlockSci
 ~~~~~~~~~~~~~~~~~~
 
